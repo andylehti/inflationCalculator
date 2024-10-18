@@ -1,21 +1,16 @@
 import streamlit as st
 import pandas as pd
 
-# Set the title and favicon that appear in the Browser's tab bar.
+# -----------------------------------------------------------------------------
+# Set Page Configuration
 st.set_page_config(
     page_title='House Prices vs Wages Dashboard',
-    page_icon=':house:',  # You can choose any emoji or URL for the icon.
+    page_icon='🏠',
+    layout='centered',  # Use 'wide' if you prefer
 )
 
 # -----------------------------------------------------------------------------
-# Initialize Session State for House Price and Wage
-
-if 'house_price' not in st.session_state:
-    st.session_state.house_price = None
-
-if 'wage' not in st.session_state:
-    st.session_state.wage = None
-
+# Initialize Session State Variables
 if 'current_year' not in st.session_state:
     st.session_state.current_year = None
 
@@ -26,28 +21,37 @@ if 'precomputed_data' not in st.session_state:
     st.session_state.precomputed_data = pd.DataFrame()
 
 # -----------------------------------------------------------------------------
-# Draw the actual page
+# Function to Precompute Data
+def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000):
+    years = list(range(base_year, base_year + max_years))
+    house_prices = [initial_house_price * (1.05) ** i for i in range(max_years)]
+    wages = [initial_wage * (1.03) ** i for i in range(max_years)]
+    years_elapsed = [i + 1 for i in range(max_years)]
+    total_wages = [wage * 2080 * elapsed for wage, elapsed in zip(wages, years_elapsed)]
+    
+    data = pd.DataFrame({
+        'Year': years,
+        'House Price': house_prices,
+        'Wage': wages,
+        'Total Wage': total_wages
+    })
+    return data
 
-# Set the title that appears at the top of the page.
-st.markdown(
-    """
-    # 🏠 House Prices vs Wages Dashboard
+# -----------------------------------------------------------------------------
+# Title and Description
+st.markdown("""
+# 🏠 House Prices vs Wages Dashboard
 
-    Explore how the disparity between house prices and wages evolves over time, starting from different base years.
-    """
-)
+Explore how the disparity between house prices and wages evolves over time, starting from different base years.
+""")
 
-# Add some spacing
-st.write("")
-st.write("")
-
-# Sidebar for Settings
+# -----------------------------------------------------------------------------
+# Sidebar for Base Year Selection
 st.sidebar.header("Settings")
 
-# Base year selection using Radio Buttons
-base_year = st.sidebar.radio('Select the starting year', [1960, 2010])
+base_year = st.sidebar.radio('Select the Starting Year', [1960, 2010])
 
-# Set initial house price and wage based on the base year
+# Set initial values based on selected base year
 if base_year == 1960:
     initial_house_price = 11600
     initial_wage = 1.00
@@ -57,86 +61,96 @@ elif base_year == 2010:
 
 # Initialize or Reset Session State based on Base Year
 if st.session_state.base_year != base_year:
-    st.session_state.house_price = initial_house_price
-    st.session_state.wage = initial_wage
-    st.session_state.current_year = base_year
     st.session_state.base_year = base_year
+    st.session_state.current_year = base_year
+    st.session_state.precomputed_data = precompute_data(base_year, initial_house_price, initial_wage)
+    
+    # Reset scroll to top on base year change (optional)
+    st.experimental_rerun()
 
-    # Precompute data for up to 4000 years from the base year
-    years = list(range(base_year, base_year + 4000))
-    house_prices = [initial_house_price * (1.05) ** i for i in range(4000)]
-    wages = [initial_wage * (1.03) ** i for i in range(4000)]
+# -----------------------------------------------------------------------------
+# Display Initial House Price and Wage
+st.markdown(f"**Starting House Price in {base_year}:** ${initial_house_price:,.2f}")
+st.markdown(f"**Starting Wage in {base_year}:** ${initial_wage:,.2f}")
 
-    st.session_state.precomputed_data = pd.DataFrame({
-        'Year': years,
-        'House Price': house_prices,
-        'Wage': wages
-    })
+# -----------------------------------------------------------------------------
+# Buttons for Incrementing Years
+# Using a fixed container at the bottom for mobile-friendly access
 
-# Display initial house price and wage
-st.markdown(f"**Starting House Price in {base_year}:** ${st.session_state.house_price:,.2f}")
-st.markdown(f"**Starting Wage in {base_year}:** ${st.session_state.wage:,.2f}")
+button_container = st.container()
 
-# Buttons to increment the number of years displayed
-col1, col2 = st.columns(2)
-with col1:
-    if st.button('+1 Year'):
-        if st.session_state.current_year < st.session_state.precomputed_data['Year'].max():
-            st.session_state.current_year += 1
-            # Update house price and wage
-            new_data = st.session_state.precomputed_data[
-                st.session_state.precomputed_data['Year'] == st.session_state.current_year
-            ]
-            if not new_data.empty:
-                st.session_state.house_price = new_data['House Price'].values[0]
-                st.session_state.wage = new_data['Wage'].values[0]
-        else:
-            st.warning("Reached the maximum available year (4000).")
+with button_container:
+    st.markdown("---")  # Separator
+    cols = st.columns([1, 1])
 
-with col2:
-    if st.button('+10 Years'):
-        new_year = st.session_state.current_year + 10
-        max_year = st.session_state.precomputed_data['Year'].max()
-        if new_year <= max_year:
-            st.session_state.current_year = new_year
-            # Update house price and wage
-            new_data = st.session_state.precomputed_data[
-                st.session_state.precomputed_data['Year'] == st.session_state.current_year
-            ]
-            if not new_data.empty:
-                st.session_state.house_price = new_data['House Price'].values[0]
-                st.session_state.wage = new_data['Wage'].values[0]
-        else:
-            st.session_state.current_year = max_year
-            new_data = st.session_state.precomputed_data[
-                st.session_state.precomputed_data['Year'] == st.session_state.current_year
-            ]
-            if not new_data.empty:
-                st.session_state.house_price = new_data['House Price'].values[0]
-                st.session_state.wage = new_data['Wage'].values[0]
-            st.warning("Reached the maximum available year (4000).")
+    with cols[0]:
+        if st.button("+1 Year"):
+            if st.session_state.current_year < st.session_state.precomputed_data['Year'].max():
+                st.session_state.current_year += 1
+            else:
+                st.warning("Reached the maximum available year (4000).")
 
-# Add some spacing
-st.write("")
-st.write("")
+    with cols[1]:
+        if st.button("+10 Years"):
+            if st.session_state.current_year + 10 <= st.session_state.precomputed_data['Year'].max():
+                st.session_state.current_year += 10
+            else:
+                st.session_state.current_year = st.session_state.precomputed_data['Year'].max()
+                st.warning("Reached the maximum available year (4000).")
 
+# -----------------------------------------------------------------------------
 # Display Current Year Data
-st.markdown(f"**Current Year:** {st.session_state.current_year}")
-st.markdown(f"**House Price:** ${st.session_state.house_price:,.2f}")
-st.markdown(f"**Wage:** ${st.session_state.wage:,.2f}")
+if st.session_state.current_year:
+    current_data = st.session_state.precomputed_data[
+        st.session_state.precomputed_data['Year'] == st.session_state.current_year
+    ].iloc[0]
+    
+    st.markdown(f"**Current Year:** {current_data['Year']}")
+    st.markdown(f"**House Price:** ${current_data['House Price']:,.2f}")
+    st.markdown(f"**Total Wage:** ${current_data['Total Wage']:,.2f}")
+else:
+    st.markdown("**Current Year:** N/A")
+    st.markdown("**House Price:** N/A")
+    st.markdown("**Total Wage:** N/A")
 
-# Add some spacing
-st.write("")
-st.write("")
+# -----------------------------------------------------------------------------
+# Display Line Chart for House Prices and Total Wages
+if st.session_state.current_year:
+    display_data = st.session_state.precomputed_data[
+        st.session_state.precomputed_data['Year'] <= st.session_state.current_year
+    ]
 
-# Precompute the data up to the current year for visualization
-display_data = st.session_state.precomputed_data[
-    st.session_state.precomputed_data['Year'] <= st.session_state.current_year
-]
+    st.header('House Prices and Total Wages Over Time')
+    st.line_chart(
+        display_data.set_index('Year')[['House Price', 'Total Wage']]
+    )
+else:
+    st.write("Use the buttons below to start exploring the data.")
 
-# Display House Prices and Wages Over Time Line Chart
-st.header('House Prices and Wages Over Time', divider='gray')
-st.line_chart(
-    display_data.set_index('Year')[['House Price', 'Wage']]
+# -----------------------------------------------------------------------------
+# Optional: Adjust Layout for Mobile
+# You can add custom CSS to enhance mobile responsiveness
+st.markdown(
+    """
+    <style>
+    /* Make the app more mobile-friendly */
+    @media only screen and (max-width: 600px) {
+        /* Adjust font sizes */
+        h1, h2, h3, h4, h5, h6 {
+            font-size: 1.5em !important;
+        }
+        /* Center align text */
+        .css-1aumxhk {
+            text-align: center;
+        }
+        /* Adjust button size */
+        button {
+            width: 100% !important;
+            height: 50px !important;
+            font-size: 1.2em !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
-
