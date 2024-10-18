@@ -11,10 +11,10 @@ st.set_page_config(
 
 # -----------------------------------------------------------------------------
 # Function to Precompute Data
-def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000):
+def precompute_data(base_year, initial_house_price, initial_wage, max_years=6000):
     years = list(range(base_year, base_year + max_years))
     house_prices = [initial_house_price * (1.05) ** i for i in range(max_years)]
-    wages = [initial_wage * (1.03) ** i for i in range(max_years)]
+    wages = [initial_wage * (1.035) ** i for i in range(max_years)]
     total_wages = [wage * 2080 * 10 for wage in wages]  # Wage for 10 years calculated at the current wage level
     
     data = pd.DataFrame({
@@ -53,7 +53,7 @@ base_year = st.sidebar.radio('Select the Starting Year', [1960, 2010])
 # Set initial values based on selected base year
 if base_year == 1960:
     initial_house_price = 11600
-    initial_wage = 1.00
+    initial_wage = 1.25
 elif base_year == 2010:
     initial_house_price = 172000
     initial_wage = 11.00
