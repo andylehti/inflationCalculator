@@ -10,17 +10,6 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# Initialize Session State Variables
-if 'current_year' not in st.session_state:
-    st.session_state.current_year = None
-
-if 'base_year' not in st.session_state:
-    st.session_state.base_year = None
-
-if 'precomputed_data' not in st.session_state:
-    st.session_state.precomputed_data = pd.DataFrame()
-
-# -----------------------------------------------------------------------------
 # Function to Precompute Data
 def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000):
     years = list(range(base_year, base_year + max_years))
@@ -36,6 +25,17 @@ def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000
         'Total Wage': total_wages
     })
     return data
+
+# -----------------------------------------------------------------------------
+# Initialize Session State Variables
+if 'current_year' not in st.session_state:
+    st.session_state.current_year = None
+
+if 'base_year' not in st.session_state:
+    st.session_state.base_year = None
+
+if 'precomputed_data' not in st.session_state:
+    st.session_state.precomputed_data = pd.DataFrame()
 
 # -----------------------------------------------------------------------------
 # Title and Description
@@ -64,9 +64,7 @@ if st.session_state.base_year != base_year:
     st.session_state.base_year = base_year
     st.session_state.current_year = base_year
     st.session_state.precomputed_data = precompute_data(base_year, initial_house_price, initial_wage)
-    
-    # Reset scroll to top on base year change (optional)
-    st.experimental_rerun()
+    # No st.experimental_rerun() to prevent immediate rerun
 
 # -----------------------------------------------------------------------------
 # Display Initial House Price and Wage
@@ -92,10 +90,12 @@ with button_container:
 
     with cols[1]:
         if st.button("+10 Years"):
-            if st.session_state.current_year + 10 <= st.session_state.precomputed_data['Year'].max():
-                st.session_state.current_year += 10
+            new_year = st.session_state.current_year + 10
+            max_year = st.session_state.precomputed_data['Year'].max()
+            if new_year <= max_year:
+                st.session_state.current_year = new_year
             else:
-                st.session_state.current_year = st.session_state.precomputed_data['Year'].max()
+                st.session_state.current_year = max_year
                 st.warning("Reached the maximum available year (4000).")
 
 # -----------------------------------------------------------------------------
@@ -103,11 +103,15 @@ with button_container:
 if st.session_state.current_year:
     current_data = st.session_state.precomputed_data[
         st.session_state.precomputed_data['Year'] == st.session_state.current_year
-    ].iloc[0]
+    ]
     
-    st.markdown(f"**Current Year:** {current_data['Year']}")
-    st.markdown(f"**House Price:** ${current_data['House Price']:,.2f}")
-    st.markdown(f"**Total Wage:** ${current_data['Total Wage']:,.2f}")
+    if not current_data.empty:
+        current_data = current_data.iloc[0]
+        st.markdown(f"**Current Year:** {current_data['Year']}")
+        st.markdown(f"**House Price:** ${current_data['House Price']:,.2f}")
+        st.markdown(f"**Total Wage:** ${current_data['Total Wage']:,.2f}")
+    else:
+        st.error("Data for the selected year is not available.")
 else:
     st.markdown("**Current Year:** N/A")
     st.markdown("**House Price:** N/A")
