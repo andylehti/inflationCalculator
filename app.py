@@ -15,8 +15,7 @@ def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000
     years = list(range(base_year, base_year + max_years))
     house_prices = [initial_house_price * (1.05) ** i for i in range(max_years)]
     wages = [initial_wage * (1.03) ** i for i in range(max_years)]
-    years_elapsed = [i + 1 for i in range(max_years)]
-    total_wages = [wage * 2080 * elapsed for wage, elapsed in zip(wages, years_elapsed)]
+    total_wages = [wage * 2080 * 10 for wage in wages]  # Wage for 10 years calculated at the current wage level
     
     data = pd.DataFrame({
         'Year': years,
@@ -109,7 +108,7 @@ if st.session_state.current_year:
         current_data = current_data.iloc[0]
         st.markdown(f"**Current Year:** {current_data['Year']}")
         st.markdown(f"**House Price:** ${current_data['House Price']:,.2f}")
-        st.markdown(f"**Total Wage:** ${current_data['Total Wage']:,.2f}")
+        st.markdown(f"**Total Wage (for 10 years):** ${current_data['Total Wage']:,.2f}")
     else:
         st.error("Data for the selected year is not available.")
 else:
