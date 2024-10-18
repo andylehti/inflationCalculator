@@ -10,24 +10,40 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# Function to Precompute Data
-def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000):
+# Function to Precompute Data for All Income Classes
+def precompute_data(base_year, initial_house_price, initial_wage, low_middle_wage, middle_wage, max_years=4000):
     years = list(range(base_year, base_year + max_years))
     
     # House price increases by 5.3% per year
     house_prices = [initial_house_price * (1.053) ** i for i in range(max_years)]
     
-    # Wage increases by 3.89% per year
+    # Wage increases by 3.89% per year for general wage
     wages = [initial_wage * (1.0389) ** i for i in range(max_years)]
     
-    # Total wage is calculated as wage * 2080 (yearly wage intake)
+    # Low-middle-class wage increases by 3.66% per year
+    low_middle_wages = [low_middle_wage * (1.0366) ** i for i in range(max_years)]
+    
+    # Middle-class wage increases by 3.57% per year
+    middle_wages = [middle_wage * (1.0357) ** i for i in range(max_years)]
+    
+    # Total yearly wage for 2080 hours
     total_wages = [wage * 2080 for wage in wages]
+    low_middle_total_wages = [wage * 2080 for wage in low_middle_wages]
+    middle_total_wages = [wage * 2080 for wage in middle_wages]
+    
+    # Average of the three yearly wages, multiplied by 10 (as requested)
+    avg_total_wages = [(w + lm + m) / 3 * 20800 for w, lm, m in zip(wages, low_middle_wages, middle_wages)]
     
     data = pd.DataFrame({
         'Year': years,
         'House Price': house_prices,
         'Wage': wages,
-        'Total Wage': total_wages
+        'Low-Middle Wage': low_middle_wages,
+        'Middle Wage': middle_wages,
+        'Total Wage': total_wages,
+        'Low-Middle Total Wage': low_middle_total_wages,
+        'Middle Total Wage': middle_total_wages,
+        'Average Total Wage (x10)': avg_total_wages
     })
     return data
 
@@ -60,21 +76,27 @@ base_year = st.sidebar.radio('Select the Starting Year', [1960, 2010])
 if base_year == 1960:
     initial_house_price = 11600
     initial_wage = 1.25
+    low_middle_wage = 4000 / 2080  # Convert annual salary to hourly wage
+    middle_wage = 9000 / 2080      # Convert annual salary to hourly wage
 elif base_year == 2010:
     initial_house_price = 172000
     initial_wage = 11.00
+    low_middle_wage = 40000 / 2080  # Placeholder for 2010 values (adjust as needed)
+    middle_wage = 90000 / 2080      # Placeholder for 2010 values (adjust as needed)
 
 # Initialize or Reset Session State based on Base Year
 if st.session_state.base_year != base_year:
     st.session_state.base_year = base_year
     st.session_state.current_year = base_year
-    st.session_state.precomputed_data = precompute_data(base_year, initial_house_price, initial_wage)
+    st.session_state.precomputed_data = precompute_data(base_year, initial_house_price, initial_wage, low_middle_wage, middle_wage)
     # No st.experimental_rerun() to prevent immediate rerun
 
 # -----------------------------------------------------------------------------
 # Display Initial House Price and Wage
 st.markdown(f"**Starting House Price in {base_year}:** ${initial_house_price:,.2f}")
 st.markdown(f"**Starting Wage in {base_year}:** ${initial_wage:,.2f}")
+st.markdown(f"**Low-Middle Class Starting Wage in {base_year}:** ${low_middle_wage:,.2f}")
+st.markdown(f"**Middle Class Starting Wage in {base_year}:** ${middle_wage:,.2f}")
 
 # -----------------------------------------------------------------------------
 # Buttons for Incrementing Years
@@ -115,13 +137,20 @@ if st.session_state.current_year:
         st.markdown(f"**Current Year:** {current_data['Year']}")
         st.markdown(f"**House Price:** ${current_data['House Price']:,.2f}")
         st.markdown(f"**Hourly Wage:** ${current_data['Wage']:,.2f}")
+        st.markdown(f"**Low-Middle Hourly Wage:** ${current_data['Low-Middle Wage']:,.2f}")
+        st.markdown(f"**Middle Hourly Wage:** ${current_data['Middle Wage']:,.2f}")
         st.markdown(f"**Total Yearly Wage (2080 hours):** ${current_data['Total Wage']:,.2f}")
+        st.markdown(f"**Low-Middle Total Yearly Wage:** ${current_data['Low-Middle Total Wage']:,.2f}")
+        st.markdown(f"**Middle Total Yearly Wage:** ${current_data['Middle Total Wage']:,.2f}")
+        st.markdown(f"**Average Total Wage (x10):** ${current_data['Average Total Wage (x10)']:,.2f}")
     else:
         st.error("Data for the selected year is not available.")
 else:
     st.markdown("**Current Year:** N/A")
     st.markdown("**House Price:** N/A")
     st.markdown("**Hourly Wage:** N/A")
+    st.markdown("**Low-Middle Hourly Wage:** N/A")
+    st.markdown("**Middle Hourly Wage:** N/A")
     st.markdown("**Total Yearly Wage:** N/A")
 
 # -----------------------------------------------------------------------------
@@ -133,7 +162,7 @@ if st.session_state.current_year:
 
     st.header('House Prices and Total Wages Over Time')
     st.line_chart(
-        display_data.set_index('Year')[['House Price', 'Total Wage']]
+        display_data.set_index('Year')[['House Price', 'Total Wage', 'Low-Middle Total Wage', 'Middle Total Wage', 'Average Total Wage (x10)']]
     )
 else:
     st.write("Use the buttons below to start exploring the data.")
