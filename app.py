@@ -17,8 +17,8 @@ def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000
     # House price increases by 5.3% per year
     house_prices = [initial_house_price * (1.053) ** i for i in range(max_years)]
     
-    # Wage increases by 3.7% per year
-    wages = [initial_wage * (1.037) ** i for i in range(max_years)]
+    # Wage increases by 3.89% per year
+    wages = [initial_wage * (1.0389) ** i for i in range(max_years)]
     
     # Total wage is calculated as wage * 2080 (yearly wage intake)
     total_wages = [wage * 2080 for wage in wages]
