@@ -11,11 +11,17 @@ st.set_page_config(
 
 # -----------------------------------------------------------------------------
 # Function to Precompute Data
-def precompute_data(base_year, initial_house_price, initial_wage, max_years=6000):
+def precompute_data(base_year, initial_house_price, initial_wage, max_years=4000):
     years = list(range(base_year, base_year + max_years))
-    house_prices = [initial_house_price * (1.05) ** i for i in range(max_years)]
-    wages = [initial_wage * (1.035) ** i for i in range(max_years)]
-    total_wages = [wage * 2080 * 10 for wage in wages]  # Wage for 10 years calculated at the current wage level
+    
+    # House price increases by 5.3% per year
+    house_prices = [initial_house_price * (1.053) ** i for i in range(max_years)]
+    
+    # Wage increases by 3.7% per year
+    wages = [initial_wage * (1.037) ** i for i in range(max_years)]
+    
+    # Total wage is calculated as wage * 2080 (yearly wage intake)
+    total_wages = [wage * 2080 for wage in wages]
     
     data = pd.DataFrame({
         'Year': years,
@@ -108,13 +114,15 @@ if st.session_state.current_year:
         current_data = current_data.iloc[0]
         st.markdown(f"**Current Year:** {current_data['Year']}")
         st.markdown(f"**House Price:** ${current_data['House Price']:,.2f}")
-        st.markdown(f"**Total Wage (for 10 years):** ${current_data['Total Wage']:,.2f}")
+        st.markdown(f"**Hourly Wage:** ${current_data['Wage']:,.2f}")
+        st.markdown(f"**Total Yearly Wage (2080 hours):** ${current_data['Total Wage']:,.2f}")
     else:
         st.error("Data for the selected year is not available.")
 else:
     st.markdown("**Current Year:** N/A")
     st.markdown("**House Price:** N/A")
-    st.markdown("**Total Wage:** N/A")
+    st.markdown("**Hourly Wage:** N/A")
+    st.markdown("**Total Yearly Wage:** N/A")
 
 # -----------------------------------------------------------------------------
 # Display Line Chart for House Prices and Total Wages
